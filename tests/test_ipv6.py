@@ -20,22 +20,31 @@ class IPv6TestCase(unittest.TestCase):
 
     def test_min_network_for_same_address(self):
         network = find_min_network(parse_ip("::1"), parse_ip("::1"))
-        self.assertEqual(format_network(network), "::1/128")
+        self.assertEqual(
+            format_network(network),
+            "Network: ::1/128\nMask:    ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff",
+        )
 
     def test_min_network_for_neighbors(self):
         network = find_min_network(parse_ip("::1"), parse_ip("::2"))
-        self.assertEqual(format_network(network), "::/126")
+        self.assertEqual(
+            format_network(network),
+            "Network: ::/126\nMask:    ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffc",
+        )
 
     def test_min_network_inside_one_ipv6_range(self):
         network = find_min_network(parse_ip("2001:db8::1"), parse_ip("2001:db8::ff"))
-        self.assertEqual(format_network(network), "2001:db8::/120")
+        self.assertEqual(
+            format_network(network),
+            "Network: 2001:db8::/120\nMask:    ffff:ffff:ffff:ffff:ffff:ffff:ffff:ff00",
+        )
 
     def test_min_network_for_all_ipv6_addresses(self):
         network = find_min_network(
             parse_ip("::"),
             parse_ip("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"),
         )
-        self.assertEqual(format_network(network), "::/0")
+        self.assertEqual(format_network(network), "Network: ::/0\nMask:    ::")
 
     def test_invalid_ipv6(self):
         invalid_addresses = [
