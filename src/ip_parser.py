@@ -1,5 +1,4 @@
 import re
-
 from src.models import ParsedIP
 
 _IPV6_GROUP_RE = re.compile(r"[0-9A-Fa-f]{1,4}")
@@ -15,7 +14,7 @@ def parse_ip(address: str) -> ParsedIP:
             value=_parse_ipv4_to_int(address),
         )
 
-    if ":" in address and "." not in address:
+    if ":" in address:
         return ParsedIP(
             version=6,
             bits=128,
@@ -76,8 +75,8 @@ def _split_ipv6(address: str) -> list[int]:
 
     if "::" in address:
         left, right = address.split("::")
-        left_groups = _split_ipv6_side(left)
-        right_groups = _split_ipv6_side(right)
+        left_groups = _split_ipv6_side(left, allow_ipv4_tail=False)
+        right_groups = _split_ipv6_side(right, allow_ipv4_tail=True)
         missing_groups = 8 - len(left_groups) - len(right_groups)
 
         if missing_groups < 1:
@@ -87,7 +86,7 @@ def _split_ipv6(address: str) -> list[int]:
         if len(groups) != 8:
             raise ValueError("После раскрытия IPv6-адрес должен содержать 8 групп")
     else:
-        groups = _split_ipv6_side(address)
+        groups = _split_ipv6_side(address, allow_ipv4_tail=True)
 
         if len(groups) != 8:
             raise ValueError("IPv6-адрес должен содержать 8 групп или сокращение ::")
@@ -95,7 +94,7 @@ def _split_ipv6(address: str) -> list[int]:
     return groups
 
 
-def _split_ipv6_side(side: str) -> list[int]:
+def _split_ipv6_side(side: str, allow_ipv4_tail: bool) -> list[int]:
     if side == "":
         return []
 
@@ -104,7 +103,24 @@ def _split_ipv6_side(side: str) -> list[int]:
     if "" in parts:
         raise ValueError("IPv6-группа не должна быть пустой")
 
+    if any("." in part for part in parts[:-1]):
+        raise ValueError("IPv4-хвост IPv6-адреса должен быть последней частью")
+
+    if "." in parts[-1]:
+        if not allow_ipv4_tail:
+            raise ValueError("IPv4-хвост IPv6-адреса должен быть последней частью")
+
+        return [
+            *(_parse_ipv6_group(part) for part in parts[:-1]),
+            *_parse_ipv4_tail(parts[-1]),
+        ]
+
     return [_parse_ipv6_group(part) for part in parts]
+
+
+def _parse_ipv4_tail(address: str) -> list[int]:
+    ipv4_value = _parse_ipv4_to_int(address)
+    return [(ipv4_value >> 16) & 65535, ipv4_value & 65535]
 
 
 def _parse_ipv6_group(group: str) -> int:

@@ -33,6 +33,19 @@ Network: 2001:db8::/120
 Mask:    ffff:ffff:ffff:ffff:ffff:ffff:ffff:ff00
 ```
 
+IPv4-mapped IPv6:
+
+```bash
+python main.py ::ffff:192.168.1.1 ::ffff:192.168.1.254
+```
+
+Результат:
+
+```text
+Network: ::ffff:192.168.1.0/120
+Mask:    ffff:ffff:ffff:ffff:ffff:ffff:ffff:ff00
+```
+
 #### Если аргументы не переданы, адреса можно ввести во время работы программы
 
 ## Тесты

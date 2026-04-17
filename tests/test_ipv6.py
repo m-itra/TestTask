@@ -13,6 +13,13 @@ class IPv6TestCase(unittest.TestCase):
         self.assertEqual(ip.bits, 128)
         self.assertEqual(ip.value, 1)
 
+    def test_parse_ipv4_mapped_ipv6_to_int(self):
+        ip = parse_ip("::ffff:192.168.1.1")
+
+        self.assertEqual(ip.version, 6)
+        self.assertEqual(ip.bits, 128)
+        self.assertEqual(ip.value, parse_ip("::ffff:c0a8:101").value)
+
     def test_int_to_ipv6_with_compression(self):
         self.assertEqual(int_to_ipv6(0), "::")
         self.assertEqual(int_to_ipv6(1), "::1")
@@ -39,6 +46,16 @@ class IPv6TestCase(unittest.TestCase):
             "Network: 2001:db8::/120\nMask:    ffff:ffff:ffff:ffff:ffff:ffff:ffff:ff00",
         )
 
+    def test_min_network_for_ipv4_mapped_ipv6_range(self):
+        network = find_min_network(
+            parse_ip("::ffff:192.168.1.1"),
+            parse_ip("::ffff:192.168.1.254"),
+        )
+        self.assertEqual(
+            format_network(network),
+            "Network: ::ffff:192.168.1.0/120\nMask:    ffff:ffff:ffff:ffff:ffff:ffff:ffff:ff00",
+        )
+
     def test_min_network_for_all_ipv6_addresses(self):
         network = find_min_network(
             parse_ip("::"),
@@ -53,6 +70,9 @@ class IPv6TestCase(unittest.TestCase):
             "2001:db8:0:0:0:0:0",
             "2001:db8::zz",
             "1:2:3:4:5:6:7:8::",
+            "::ffff:192.168.1",
+            "::ffff:192.168.1.999",
+            "::ffff:192.168.1.1:abcd",
         ]
 
         for address in invalid_addresses:

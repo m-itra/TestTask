@@ -2,7 +2,7 @@ from src.models import Network
 
 
 def format_network(network: Network) -> str:
-    address = _format_ip(network.value, network.version)
+    address = _format_network_address(network)
     mask_value = _prefix_to_mask(network.prefix, network.bits)
     mask = _format_ip(mask_value, network.version)
 
@@ -14,6 +14,25 @@ def format_network(network: Network) -> str:
 
 def _prefix_to_mask(prefix: int, bits: int) -> int:
     return ((1 << prefix) - 1) << (bits - prefix)
+
+
+def _format_network_address(network: Network) -> str:
+    if (
+        network.version == 6
+        and network.prefix >= 96
+        and _is_ipv4_mapped_ipv6(network.value)
+    ):
+        return _format_ipv4_mapped_ipv6(network.value)
+
+    return _format_ip(network.value, network.version)
+
+
+def _is_ipv4_mapped_ipv6(value: int) -> bool:
+    return value >> 32 == 65535
+
+
+def _format_ipv4_mapped_ipv6(value: int) -> str:
+    return f"::ffff:{int_to_ipv4(value & 4294967295)}"
 
 
 def _format_ip(value: int, version: int) -> str:
