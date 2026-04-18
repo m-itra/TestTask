@@ -26,3 +26,7 @@ class Network:
     @property
     def bits(self) -> int:
         return _IP_BITS_BY_VERSION[self.version]
+
+    @property
+    def mask(self) -> int:
+        return ((1 << self.prefix) - 1) << (self.bits - self.prefix)

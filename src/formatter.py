@@ -3,17 +3,12 @@ from src.models import Network
 
 def format_network(network: Network) -> str:
     address = _format_network_address(network)
-    mask_value = _prefix_to_mask(network.prefix, network.bits)
-    mask = _format_ip(mask_value, network.version)
+    mask = _format_ip(network.mask, network.version)
 
     return (
         f"{'Network:':<8} {address}/{network.prefix}\n"
         f"{'Mask:':<8} {mask}"
     )
-
-
-def _prefix_to_mask(prefix: int, bits: int) -> int:
-    return ((1 << prefix) - 1) << (bits - prefix)
 
 
 def _format_network_address(network: Network) -> str:
