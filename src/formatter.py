@@ -18,9 +18,9 @@ def _prefix_to_mask(prefix: int, bits: int) -> int:
 
 def _format_network_address(network: Network) -> str:
     if (
-        network.version == 6
-        and network.prefix >= 96
-        and _is_ipv4_mapped_ipv6(network.value)
+            network.version == 6
+            and network.prefix >= 96
+            and _is_ipv4_mapped_ipv6(network.value)
     ):
         return _format_ipv4_mapped_ipv6(network.value)
 
@@ -36,7 +36,7 @@ def _format_ipv4_mapped_ipv6(value: int) -> str:
 
 
 def _format_ip(value: int, version: int) -> str:
-    return {4: int_to_ipv4, 6: int_to_ipv6}[version](value)
+    return _IP_CONVERTERS_BY_VERSION[version](value)
 
 
 def int_to_ipv4(value: int) -> str:
@@ -48,18 +48,13 @@ def int_to_ipv4(value: int) -> str:
     return ".".join(octets)
 
 
-def int_to_ipv6(value: int) -> str:
-    groups = []
-
-    for shift in range(112, -1, -16):
-        groups.append((value >> shift) & 65535)
-
+def _find_longest_zero_run(groups: list[int]) -> tuple[int, int]:
     best_start = -1
     best_length = 0
     current_start = -1
     current_length = 0
 
-    for index, group in enumerate(groups + [1]):
+    for index, group in enumerate(groups):
         if group == 0:
             if current_start == -1:
                 current_start = index
@@ -70,9 +65,23 @@ def int_to_ipv6(value: int) -> str:
             if current_length > best_length:
                 best_start = current_start
                 best_length = current_length
-
             current_start = -1
             current_length = 0
+
+    if current_length > best_length:
+        best_start = current_start
+        best_length = current_length
+
+    return best_start, best_length
+
+
+def int_to_ipv6(value: int) -> str:
+    groups = []
+
+    for shift in range(112, -1, -16):
+        groups.append((value >> shift) & 65535)
+
+    best_start, best_length = _find_longest_zero_run(groups)
 
     if best_length < 2:
         return ":".join(_format_ipv6_group(group) for group in groups)
@@ -94,3 +103,9 @@ def int_to_ipv6(value: int) -> str:
 
 def _format_ipv6_group(group: int) -> str:
     return format(group, "x")
+
+
+_IP_CONVERTERS_BY_VERSION = {
+    4: int_to_ipv4,
+    6: int_to_ipv6,
+}
