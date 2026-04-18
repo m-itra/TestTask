@@ -13,12 +13,22 @@ class IPv6TestCase(unittest.TestCase):
         self.assertEqual(ip.bits, 128)
         self.assertEqual(ip.value, 1)
 
+    def test_parse_ipv6_strips_bracketed_port(self):
+        ip = parse_ip("[::1]:443")
+
+        self.assertEqual(ip, parse_ip("::1"))
+
     def test_parse_ipv4_mapped_ipv6_to_int(self):
         ip = parse_ip("::ffff:192.168.1.1")
 
         self.assertEqual(ip.version, 6)
         self.assertEqual(ip.bits, 128)
         self.assertEqual(ip.value, parse_ip("::ffff:c0a8:101").value)
+
+    def test_parse_ipv4_mapped_ipv6_strips_bracketed_port(self):
+        ip = parse_ip("[::ffff:192.168.1.1]:443")
+
+        self.assertEqual(ip, parse_ip("::ffff:192.168.1.1"))
 
     def test_int_to_ipv6_with_compression(self):
         self.assertEqual(int_to_ipv6(0), "::")
@@ -73,6 +83,11 @@ class IPv6TestCase(unittest.TestCase):
             "::ffff:192.168.1",
             "::ffff:192.168.1.999",
             "::ffff:192.168.1.1:abcd",
+            "[::1",
+            "[]:443",
+            "[::1]:",
+            "[::1]:https",
+            "[::1]:65536",
         ]
 
         for address in invalid_addresses:

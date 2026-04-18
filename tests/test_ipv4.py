@@ -13,6 +13,11 @@ class IPv4TestCase(unittest.TestCase):
         self.assertEqual(ip.bits, 32)
         self.assertEqual(ip.value, 3232235786)
 
+    def test_parse_ipv4_strips_port(self):
+        ip = parse_ip("192.168.1.10:8080")
+
+        self.assertEqual(ip, parse_ip("192.168.1.10"))
+
     def test_int_to_ipv4(self):
         self.assertEqual(int_to_ipv4(3232235786), "192.168.1.10")
 
@@ -50,6 +55,9 @@ class IPv4TestCase(unittest.TestCase):
             "192.168.1.999",
             "192..1.1",
             "abc.def.1.2",
+            "192.168.1.1:",
+            "192.168.1.1:http",
+            "192.168.1.1:65536",
         ]
 
         for address in invalid_addresses:

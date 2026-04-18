@@ -5,7 +5,7 @@ _IPV6_GROUP_RE = re.compile(r"[0-9A-Fa-f]{1,4}")
 
 
 def parse_ip(address: str) -> ParsedIP:
-    address = address.strip()
+    address = _strip_port(address.strip())
 
     if "." in address and ":" not in address:
         return ParsedIP(
@@ -22,6 +22,51 @@ def parse_ip(address: str) -> ParsedIP:
         )
 
     raise ValueError("IP-адрес должен быть корректным IPv4 или IPv6")
+
+
+def _strip_port(address: str) -> str:
+    if address.startswith("["):
+        return _strip_bracketed_port(address)
+
+    if address.count(":") == 1 and "." in address:
+        host, port = address.split(":")
+        _validate_port(port)
+        return host
+
+    return address
+
+
+def _strip_bracketed_port(address: str) -> str:
+    close_bracket_index = address.find("]")
+
+    if close_bracket_index == -1:
+        raise ValueError("IP-адрес с портом должен быть в формате [адрес]:порт")
+
+    host = address[1:close_bracket_index]
+    port = address[close_bracket_index + 1:]
+
+    if not host:
+        raise ValueError("IP-адрес внутри скобок не должен быть пустым")
+
+    if not port:
+        return host
+
+    if not port.startswith(":"):
+        raise ValueError("IP-адрес с портом должен быть в формате [адрес]:порт")
+
+    _validate_port(port[1:])
+    return host
+
+
+def _validate_port(port: str) -> None:
+    if not port:
+        raise ValueError("Порт не должен быть пустым")
+
+    if not port.isdigit():
+        raise ValueError("Порт должен содержать только цифры")
+
+    if int(port) > 65535:
+        raise ValueError("Порт должен быть в диапазоне от 0 до 65535")
 
 
 def _parse_ipv4_to_int(address: str) -> int:
