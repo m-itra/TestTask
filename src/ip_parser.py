@@ -10,14 +10,12 @@ def parse_ip(address: str) -> ParsedIP:
     if "." in address and ":" not in address:
         return ParsedIP(
             version=4,
-            bits=32,
             value=_parse_ipv4_to_int(address),
         )
 
     if ":" in address:
         return ParsedIP(
             version=6,
-            bits=128,
             value=_parse_ipv6_to_int(address),
         )
 

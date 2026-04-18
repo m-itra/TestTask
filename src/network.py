@@ -19,7 +19,6 @@ def find_min_network(first_ip: ParsedIP, second_ip: ParsedIP) -> Network:
 
     return Network(
         version=first_ip.version,
-        bits=bits,
         value=network_value,
         prefix=prefix,
     )
