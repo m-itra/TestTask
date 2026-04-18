@@ -61,5 +61,6 @@ python main.py [::ffff:192.168.1.1]:443 [::ffff:192.168.1.254]:443
 ## Тесты
 
 ```bash
-python -m unittest discover -s tests -v
+python -m pip install -r requirements.txt
+python -m pytest -v
 ```

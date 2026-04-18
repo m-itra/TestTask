@@ -1,69 +1,98 @@
-import unittest
+import pytest
 
 from src.formatter import format_network, int_to_ipv4
 from src.ip_parser import parse_ip
 from src.network import find_min_network
 
-
-class IPv4TestCase(unittest.TestCase):
-    def test_parse_ipv4_uses_octets_as_bytes(self):
-        ip = parse_ip("192.168.1.10")
-
-        self.assertEqual(ip.version, 4)
-        self.assertEqual(ip.bits, 32)
-        self.assertEqual(ip.value, 3232235786)
-
-    def test_parse_ipv4_strips_port(self):
-        ip = parse_ip("192.168.1.10:8080")
-
-        self.assertEqual(ip, parse_ip("192.168.1.10"))
-
-    def test_int_to_ipv4(self):
-        self.assertEqual(int_to_ipv4(3232235786), "192.168.1.10")
-
-    def test_min_network_inside_one_subnet(self):
-        network = find_min_network(parse_ip("192.168.1.10"), parse_ip("192.168.1.20"))
-        self.assertEqual(
-            format_network(network),
-            "Network: 192.168.1.0/27\nMask:    255.255.255.224",
-        )
-
-    def test_min_network_for_same_address(self):
-        network = find_min_network(parse_ip("10.0.0.1"), parse_ip("10.0.0.1"))
-        self.assertEqual(
-            format_network(network),
-            "Network: 10.0.0.1/32\nMask:    255.255.255.255",
-        )
-
-    def test_min_network_for_all_ipv4_addresses(self):
-        network = find_min_network(parse_ip("0.0.0.0"), parse_ip("255.255.255.255"))
-        self.assertEqual(
-            format_network(network),
-            "Network: 0.0.0.0/0\nMask:    0.0.0.0",
-        )
-
-    def test_min_network_for_different_first_bit(self):
-        network = find_min_network(parse_ip("10.0.0.1"), parse_ip("172.16.0.1"))
-        self.assertEqual(
-            format_network(network),
-            "Network: 0.0.0.0/0\nMask:    0.0.0.0",
-        )
-
-    def test_invalid_ipv4(self):
-        invalid_addresses = [
-            "192.168.1",
-            "192.168.1.999",
-            "192..1.1",
-            "abc.def.1.2",
-            "192.168.1.1:",
-            "192.168.1.1:http",
-            "192.168.1.1:65536",
-        ]
-
-        for address in invalid_addresses:
-            with self.assertRaises(ValueError):
-                parse_ip(address)
+IPV4_VERSION = 4
+IPV4_BITS = 32
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_parse_ipv4_uses_octets_as_bytes():
+    address = "192.168.1.10"
+    expected_version = IPV4_VERSION
+    expected_bits = IPV4_BITS
+    expected_value = 3232235786
+
+    ip = parse_ip(address)
+
+    assert ip.version == expected_version
+    assert ip.bits == expected_bits
+    assert ip.value == expected_value
+
+
+def test_parse_ipv4_strips_port():
+    address_with_port = "192.168.1.10:8080"
+    expected_address = "192.168.1.10"
+    assert parse_ip(address_with_port) == parse_ip(expected_address)
+
+
+def test_int_to_ipv4():
+    value = 3232235786
+    expected_address = "192.168.1.10"
+    assert int_to_ipv4(value) == expected_address
+
+
+def test_min_network_inside_one_subnet():
+    first_address = "192.168.1.10"
+    second_address = "192.168.1.20"
+    expected_network = (
+        "Network: 192.168.1.0/27\n"
+        "Mask:    255.255.255.224"
+    )
+
+    network = find_min_network(parse_ip(first_address), parse_ip(second_address))
+    assert format_network(network) == expected_network
+
+
+def test_min_network_for_same_address():
+    first_address = "10.0.0.1"
+    second_address = "10.0.0.1"
+    expected_network = (
+        "Network: 10.0.0.1/32\n"
+        "Mask:    255.255.255.255"
+    )
+
+    network = find_min_network(parse_ip(first_address), parse_ip(second_address))
+    assert format_network(network) == expected_network
+
+
+def test_min_network_for_all_ipv4_addresses():
+    first_address = "0.0.0.0"
+    second_address = "255.255.255.255"
+    expected_network = (
+        "Network: 0.0.0.0/0\n"
+        "Mask:    0.0.0.0"
+    )
+
+    network = find_min_network(parse_ip(first_address), parse_ip(second_address))
+    assert format_network(network) == expected_network
+
+
+def test_min_network_for_different_first_bit():
+    first_address = "10.0.0.1"
+    second_address = "172.16.0.1"
+    expected_network = (
+        "Network: 0.0.0.0/0\n"
+        "Mask:    0.0.0.0"
+    )
+
+    network = find_min_network(parse_ip(first_address), parse_ip(second_address))
+    assert format_network(network) == expected_network
+
+
+@pytest.mark.parametrize(
+    "address",
+    [
+        "192.168.1",
+        "192.168.1.999",
+        "192..1.1",
+        "abc.def.1.2",
+        "192.168.1.1:",
+        "192.168.1.1:http",
+        "192.168.1.1:65536",
+    ],
+)
+def test_invalid_ipv4(address):
+    with pytest.raises(ValueError):
+        parse_ip(address)
